@@ -1,0 +1,764 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Drawn Before Built</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout concept: the whole page is one drawing set. Grid-paper ground, a ruler rail that fills as you scroll,
+   a title-block HUD that changes sheet per section, and every drawing draws itself line by line on scroll. */
+:root{
+  --paper:#E7ECEA; --paper-2:#D9E0DD; --ink:#12181B; --ink-2:#4B575B; --line:rgba(18,24,27,.14); --line-2:rgba(18,24,27,.32);
+  --red:#D2362B; --timber:#A9733A;
+  --face-top:#F4F7F6; --face-front:#E2E8E6; --face-right:#CBD3D1; --face-wood:#D9C3A3; --face-wood-r:#BFA47C; --face-wood-t:#E8D6BA;
+  --f-display:'Big Shoulders Display','Arial Narrow',Impact,sans-serif;
+  --f-body:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+  --gx:max(16px,env(safe-area-inset-left,0px)); --gr:max(16px,env(safe-area-inset-right,0px));
+}
+@media (min-width:1000px){:root{--gx:max(76px,env(safe-area-inset-left,0px))}}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#0F1416; --paper-2:#171E21; --ink:#E5ECE9; --ink-2:#8F9DA1; --line:rgba(229,236,233,.12); --line-2:rgba(229,236,233,.3);
+  --red:#FF5B4D; --timber:#C98F52;
+  --face-top:#222B2F; --face-front:#192124; --face-right:#11181A; --face-wood:#6B5233; --face-wood-r:#4E3B24; --face-wood-t:#80633E; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0F1416; --paper-2:#171E21; --ink:#E5ECE9; --ink-2:#8F9DA1; --line:rgba(229,236,233,.12); --line-2:rgba(229,236,233,.3);
+  --red:#FF5B4D; --timber:#C98F52;
+  --face-top:#222B2F; --face-front:#192124; --face-right:#11181A; --face-wood:#6B5233; --face-wood-r:#4E3B24; --face-wood-t:#80633E; color-scheme:dark}
+
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:auto}
+body{background:var(--paper);color:var(--ink);font:400 clamp(15px,1.05vw,17px)/1.6 var(--f-body);overflow-x:clip;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+a:focus-visible,button:focus-visible{outline:2px solid var(--red);outline-offset:3px}
+h1,h2,h3,p{margin:0}
+h1,h2,h3{text-wrap:balance}
+svg{display:block}
+.pad{padding-left:var(--gx);padding-right:var(--gr)}
+.mono{font-family:var(--f-mono);font-size:.74rem;letter-spacing:.08em;text-transform:uppercase}
+.eyebrow{font:500 .74rem/1.4 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2);display:flex;gap:.7rem;align-items:center}
+.eyebrow::before{content:"";width:28px;height:1px;background:var(--red)}
+.disp{font-family:var(--f-display);font-weight:800;text-transform:uppercase;line-height:.88;letter-spacing:-.005em}
+.red{color:var(--red)}
+
+/* drawing primitives */
+.ln{fill:none;stroke:var(--ink);stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round}
+.ln.thin{stroke-width:1;stroke:var(--ink-2)}
+.ln.hair{stroke-width:.7;stroke:var(--ink-2)}
+.ln.rd{stroke:var(--red);stroke-width:1.6}
+.ln.dash{stroke-dasharray:6 5}
+.txt{font:500 12px var(--f-mono);fill:var(--ink-2);letter-spacing:.06em}
+.txt.rd{fill:var(--red)}
+.txt.ink{fill:var(--ink)}
+.f-top{fill:var(--face-top)}.f-front{fill:var(--face-front)}.f-right{fill:var(--face-right)}
+.w-top{fill:var(--face-wood-t)}.w-front{fill:var(--face-wood)}.w-right{fill:var(--face-wood-r)}
+.grain{fill:none;stroke:var(--timber);stroke-width:.8;opacity:.55}
+.fill-ink{fill:var(--ink)}
+.iso .ln{stroke-width:3.2}.iso .ln.hair{stroke-width:1.6}.iso .grain{stroke-width:1.5}
+@media (max-width:860px){.panel-art .txt{font-size:17px}.panel-art{aspect-ratio:16/11}}
+
+/* fixed UI */
+.nav{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;justify-content:space-between;align-items:center;gap:1rem;padding-top:calc(14px + env(safe-area-inset-top,0px));padding-bottom:14px;mix-blend-mode:normal;pointer-events:none}
+.nav>*{pointer-events:auto}
+.mark{display:flex;align-items:center;gap:.7rem;font:800 1.15rem/1 var(--f-display);text-transform:uppercase;letter-spacing:.04em}
+.mark-box{width:34px;height:34px;display:grid;place-items:center;border:1.5px solid var(--ink);font-size:.95rem;background:var(--paper)}
+.nav nav{display:flex;gap:clamp(.8rem,2vw,1.8rem);align-items:center;font:500 .72rem/1 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;background:color-mix(in srgb,var(--paper) 78%,transparent);backdrop-filter:blur(8px);padding:.7rem .9rem;border:1px solid var(--line)}
+.nav nav a{padding:.2rem 0;position:relative}
+.nav nav a::after{content:"";position:absolute;left:0;right:0;bottom:-2px;height:1px;background:var(--red);transform:scaleX(0);transform-origin:left;transition:transform .35s}
+.nav nav a:hover::after,.nav nav a:focus-visible::after{transform:scaleX(1)}
+.nav-cta{color:var(--red)}
+@media (max-width:640px){.nav nav a:not(.nav-cta){display:none}.mark span:last-child{display:none}}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:60;background:var(--paper)}
+
+.rail{position:fixed;left:max(14px,env(safe-area-inset-left,0px));top:84px;bottom:56px;width:22px;z-index:40;display:none;
+  background:repeating-linear-gradient(to bottom,var(--line-2) 0 1px,transparent 1px 10px) right/10px 100% no-repeat,
+             repeating-linear-gradient(to bottom,var(--line-2) 0 1px,transparent 1px 50px) right/18px 100% no-repeat}
+.rail::after{content:"";position:absolute;right:0;top:0;bottom:0;width:1px;background:var(--line-2)}
+.rail-fill{position:absolute;right:0;top:0;width:3px;height:0;background:var(--red)}
+.rail-mark{position:absolute;right:6px;top:0;transform:translateY(-50%);font:500 .62rem/1 var(--f-mono);color:var(--red);background:var(--paper);padding:2px 4px;border:1px solid var(--red);white-space:nowrap}
+.rail-mark::after{content:"%"}
+@media (min-width:1000px){.rail{display:block}}
+
+.hud{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:50;display:grid;grid-template-columns:auto auto auto;border:1px solid var(--line-2);background:color-mix(in srgb,var(--paper) 86%,transparent);backdrop-filter:blur(8px);font:500 .64rem/1 var(--f-mono);letter-spacing:.1em;text-transform:uppercase;pointer-events:none}
+.hud span{padding:.55rem .7rem;border-left:1px solid var(--line-2)}
+.hud span:first-child{border-left:0;color:var(--red)}
+@media (max-width:520px){.hud span:nth-child(3){display:none}}
+
+.xhair{position:fixed;inset:0;z-index:30;pointer-events:none;opacity:0;transition:opacity .3s}
+.xhair.on{opacity:1}
+.xhair i{position:absolute;background:var(--line-2)}
+.xh-x{left:0;right:0;height:1px;top:0}.xh-y{top:0;bottom:0;width:1px;left:0}
+.xhair b{position:absolute;top:0;left:0;font:500 .6rem/1 var(--f-mono);color:var(--red);letter-spacing:.08em;white-space:nowrap;padding:3px 5px;background:var(--paper)}
+@media (hover:none),(max-width:900px){.xhair{display:none}}
+
+/* hero */
+.hero{position:relative}
+.hero-pin{position:relative;height:100vh;height:100svh;overflow:hidden;display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);align-items:center;gap:clamp(1rem,3vw,3rem);padding-top:76px;padding-bottom:64px}
+.grid-bg{position:absolute;inset:0;z-index:0;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px),linear-gradient(var(--line-2) 1px,transparent 1px),linear-gradient(90deg,var(--line-2) 1px,transparent 1px);background-size:20px 20px,20px 20px,100px 100px,100px 100px;opacity:.55;-webkit-mask-image:radial-gradient(ellipse at 60% 50%,#000 30%,transparent 85%);mask-image:radial-gradient(ellipse at 60% 50%,#000 30%,transparent 85%)}
+.hero-copy{position:relative;z-index:2;display:grid;gap:1.4rem;align-content:center}
+.hero h1{font-family:var(--f-display);font-weight:900;text-transform:uppercase;font-size:clamp(3.4rem,min(10.5vw,15svh),10.2rem);line-height:.84;letter-spacing:-.01em}
+.swap{display:grid}.swap>*{grid-area:1/1;align-self:start}
+.hero h1 .ln1{display:block;overflow:hidden;padding-bottom:.05em}
+.hero h1 .ln1>span{display:block}
+.hero h1 em{font-style:normal;color:var(--red)}
+.lede{max-width:44ch;color:var(--ink-2);font-size:clamp(.98rem,1.2vw,1.12rem)}
+.legend{display:grid;gap:.5rem;font:400 .8rem/1.4 var(--f-mono);color:var(--ink-2);max-width:46ch;opacity:0}
+.legend li{display:grid;grid-template-columns:26px 1fr;gap:.7rem;align-items:center;list-style:none}
+.legend ul{margin:0;padding:0;display:grid;gap:.5rem}
+.legend b{width:22px;height:22px;border:1.5px solid var(--red);border-radius:50%;display:grid;place-items:center;color:var(--red);font-weight:500;font-size:.7rem}
+.scrollcue{display:flex;align-items:center;gap:.8rem;font:500 .7rem/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2)}
+.scrollcue i{width:1px;height:38px;background:var(--line-2);position:relative;overflow:hidden}
+.scrollcue i::after{content:"";position:absolute;left:0;top:-40%;width:1px;height:40%;background:var(--red);animation:cue 1.8s ease-in-out infinite}
+@keyframes cue{to{top:110%}}
+.hero-stage{position:relative;z-index:1;height:100%;min-height:0}
+.hero-stage svg{width:100%;height:100%;overflow:visible}
+.stage-tag{position:absolute;left:0;bottom:0;font:500 .68rem/1 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2)}
+.stage-tag span{color:var(--red)}
+@media (max-width:860px){
+  .hero-pin{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);align-items:start;padding-top:70px;gap:.4rem}
+  .hero h1{font-size:clamp(3rem,16vw,5.6rem)}
+  .hero .lede{display:none}.scrollcue{display:none}
+  .hero-copy{gap:.8rem}
+  .legend{font-size:.7rem;gap:.3rem}
+}
+
+/* sheet shared */
+.sheet{position:relative}
+.sheet-head{display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;flex-wrap:wrap;border-bottom:1px solid var(--line-2);padding-bottom:.9rem;margin-bottom:clamp(1.6rem,4vw,3.4rem)}
+.sheet-head h2{font-family:var(--f-display);font-weight:900;text-transform:uppercase;line-height:.86;font-size:clamp(2.6rem,7.5vw,7rem)}
+.sheet-head .eyebrow{margin-bottom:.8rem}
+
+/* brief / statement */
+.brief{padding-top:clamp(5rem,14vw,12rem);padding-bottom:clamp(5rem,14vw,12rem)}
+.brief p{font-family:var(--f-display);font-weight:800;text-transform:uppercase;line-height:.98;font-size:clamp(2rem,6.2vw,6.2rem);max-width:19ch;text-wrap:pretty}
+.brief .w{display:inline-block;white-space:pre}
+.brief .w.mk{color:var(--red)}
+.brief-meta{margin-top:clamp(2rem,5vw,4rem);display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.4rem;max-width:900px;border-top:1px solid var(--line-2);padding-top:1.2rem}
+.brief-meta div{display:grid;gap:.3rem}
+.brief-meta dt{color:var(--ink-2)}
+.brief-meta dd{margin:0;font-size:.95rem}
+
+/* drawing sets: horizontal pinned */
+.sets{position:relative;overflow:hidden}
+.sets-pin{height:100vh;height:100svh;display:flex;flex-direction:column;justify-content:center;padding-top:80px;padding-bottom:64px}
+.sets .sheet-head{margin-bottom:clamp(1rem,2.4vw,2rem)}
+.sets .sheet-head h2{font-size:clamp(2.4rem,6.2vw,6rem)}
+.track{display:flex;gap:clamp(1rem,2vw,2rem);width:max-content;padding-left:var(--gx);padding-right:var(--gr);will-change:transform}
+.panel{width:min(78vw,720px);flex:none;display:grid;grid-template-rows:minmax(0,1fr) auto;border:1px solid var(--line-2);background:color-mix(in srgb,var(--paper) 70%,var(--paper-2));position:relative}
+.panel-art{aspect-ratio:16/10;border-bottom:1px solid var(--line-2);position:relative;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:24px 24px}
+.panel-art svg{position:absolute;inset:0;width:100%;height:100%}
+.panel-body{display:grid;grid-template-columns:1fr auto;gap:.3rem 1.2rem;padding:1rem 1.1rem 1.1rem}
+.panel-body h3{font-family:var(--f-display);font-weight:800;text-transform:uppercase;font-size:clamp(1.7rem,3vw,2.5rem);line-height:.9}
+.panel-body .scale{font:500 .74rem/1 var(--f-mono);letter-spacing:.1em;border:1px solid var(--red);color:var(--red);padding:.4rem .55rem;align-self:start}
+.panel-body p{grid-column:1/-1;color:var(--ink-2);font-size:.92rem;max-width:56ch}
+@media (max-width:860px){
+  .sets-pin{height:auto;padding-top:5rem;padding-bottom:4rem}
+  .track{flex-direction:column;width:auto;padding:0 var(--gr) 0 var(--gx)}
+  .panel{width:100%}
+}
+
+/* process: layers */
+.process{padding-top:clamp(4rem,9vw,8rem)}
+.proc-pin{min-height:100vh;min-height:100svh;display:grid;grid-template-columns:minmax(0,4fr) minmax(0,8fr);gap:clamp(1.2rem,3vw,3rem);align-items:center;padding-top:84px;padding-bottom:70px}
+.layers{display:grid;gap:.5rem;align-content:center}
+.layers h2{font-family:var(--f-display);font-weight:900;text-transform:uppercase;line-height:.86;font-size:clamp(2.4rem,5vw,4.6rem);margin-bottom:.8rem}
+.layer-box{border:1px solid var(--line-2);background:color-mix(in srgb,var(--paper) 80%,var(--paper-2))}
+.layer-box>.mono{display:flex;justify-content:space-between;padding:.6rem .8rem;border-bottom:1px solid var(--line-2);color:var(--ink-2)}
+.layer{display:grid;grid-template-columns:18px 1fr auto;gap:.2rem .8rem;align-items:start;padding:.7rem .8rem;border-bottom:1px solid var(--line);opacity:.38;transition:opacity .4s,background .4s}
+.layer:last-child{border-bottom:0}
+.layer .sw{width:14px;height:14px;border:1.5px solid var(--ink);margin-top:.28rem;position:relative}
+.layer .sw::after{content:"";position:absolute;inset:2px;background:var(--ink);transform:scale(0);transition:transform .35s}
+.layer .nm{font:500 .78rem/1.3 var(--f-mono);letter-spacing:.08em}
+.layer .st{font:500 .62rem/1.6 var(--f-mono);letter-spacing:.12em;color:var(--ink-2)}
+.layer p{grid-column:2/-1;font-size:.88rem;color:var(--ink-2);line-height:1.45;max-height:0;overflow:hidden;transition:max-height .5s}
+.layer.on{opacity:1;background:color-mix(in srgb,var(--paper) 60%,transparent)}
+.layer.on .sw::after{transform:scale(1)}
+.layer.on p{max-height:7em}
+.layer.rev .sw{border-color:var(--red)}.layer.rev .sw::after{background:var(--red)}.layer.rev .nm{color:var(--red)}
+.plan-wrap{position:relative;border:1px solid var(--line-2);background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:24px 24px;aspect-ratio:800/560;max-height:calc(100svh - 170px);width:100%;justify-self:center}
+.plan-wrap svg{position:absolute;inset:0;width:100%;height:100%}
+@media (max-width:860px){.proc-pin{grid-template-columns:minmax(0,1fr);padding-top:70px;gap:1rem;align-content:start}.layers h2{font-size:2.4rem;margin-bottom:.2rem}.layer p{display:none}.layer{padding:.45rem .7rem}.plan-wrap{max-height:none}}
+
+/* work */
+.work{padding-top:clamp(4rem,9vw,8rem);padding-bottom:clamp(3rem,8vw,7rem)}
+.rows{display:grid}
+.row{position:relative;display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,1.1fr);gap:clamp(1rem,3vw,3rem);align-items:center;padding:1.4rem 0;border-top:1px solid var(--line-2);transition:background .4s}
+.row:last-child{border-bottom:1px solid var(--line-2)}
+.row::before{content:"";position:absolute;left:0;top:-1px;height:2px;width:100%;background:var(--red);transform:scaleX(0);transform-origin:left;transition:transform .6s cubic-bezier(.2,.8,.2,1)}
+.row:hover::before,.row.act::before{transform:scaleX(1)}
+.row h3{font-family:var(--f-display);font-weight:900;text-transform:uppercase;line-height:.88;font-size:clamp(2rem,4.6vw,4.4rem);transition:transform .5s cubic-bezier(.2,.8,.2,1)}
+.row:hover h3,.row.act h3{transform:translateX(.6rem)}
+.row .tags{display:grid;gap:.2rem;color:var(--ink-2)}
+.row .tags b{font-weight:500;color:var(--ink)}
+.row .tags .mono{font-size:.7rem}
+.thumb{aspect-ratio:2/1;position:relative;border:1px solid var(--line-2);background:color-mix(in srgb,var(--paper) 70%,var(--paper-2))}
+.thumb svg{position:absolute;inset:0;width:100%;height:100%}
+@media (max-width:860px){.row{grid-template-columns:minmax(0,1fr);gap:.8rem}.row h3{font-size:clamp(2.2rem,11vw,3.4rem)}}
+
+/* capability */
+.cap{padding-top:clamp(3rem,7vw,6rem);padding-bottom:clamp(3rem,7vw,6rem);overflow:hidden}
+.marq{display:flex;gap:0;width:max-content;will-change:transform;font-family:var(--f-display);font-weight:900;text-transform:uppercase;line-height:1;font-size:clamp(3rem,9vw,9rem);white-space:nowrap}
+.marq span{padding-right:.35em}
+.marq span:nth-child(even){color:transparent;-webkit-text-stroke:1.5px var(--ink)}
+.marq.alt span:nth-child(even){-webkit-text-stroke:0;color:var(--red)}
+.marq.alt span:nth-child(odd){color:transparent;-webkit-text-stroke:1.5px var(--ink)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-top:clamp(2.4rem,6vw,5rem);border-top:1px solid var(--line-2)}
+.stat{padding:1.3rem 1rem 1.3rem 0;display:grid;gap:.4rem;border-right:1px solid var(--line)}
+.stat:last-child{border-right:0}
+.stat strong{font:900 clamp(2.6rem,6vw,5.4rem)/.9 var(--f-display);text-transform:uppercase;font-variant-numeric:tabular-nums}
+.stat>span{color:var(--ink-2);font-size:.88rem;max-width:22ch}
+@media (max-width:640px){.stat{border-right:0;border-bottom:1px solid var(--line)}}
+
+/* contact */
+.contact{position:relative;padding-top:clamp(5rem,12vw,10rem);padding-bottom:calc(clamp(5rem,10vw,8rem) + 40px);overflow:hidden}
+.contact h2{font-family:var(--f-display);font-weight:900;text-transform:uppercase;line-height:.82;font-size:clamp(3.4rem,14vw,14rem);max-width:12ch}
+.stamp{position:absolute;right:max(var(--gr),4vw);top:clamp(5rem,12vw,9rem);width:clamp(150px,22vw,300px);aspect-ratio:1.5;border:4px double var(--red);color:var(--red);display:grid;place-items:center;text-align:center;font:900 clamp(1rem,2.2vw,1.9rem)/1.05 var(--f-display);letter-spacing:.04em;text-transform:uppercase;transform:rotate(-9deg);background:color-mix(in srgb,var(--paper) 40%,transparent);padding:.4rem}
+.stamp small{display:block;font:500 clamp(.52rem,.8vw,.7rem)/1.4 var(--f-mono);letter-spacing:.14em;margin-top:.3rem}
+.contact-grid{margin-top:clamp(2.4rem,6vw,5rem);display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:clamp(1.5rem,4vw,4rem);align-items:start}
+.mail{display:flex;flex-wrap:wrap;gap:.8rem;align-items:center}
+.mail code{font:500 clamp(1.1rem,2.6vw,2rem)/1.2 var(--f-mono);border-bottom:2px solid var(--red);padding-bottom:.2rem;user-select:all;overflow-wrap:anywhere}
+.btn{font:500 .72rem/1 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;border:1px solid var(--ink);background:transparent;color:var(--ink);padding:.8rem 1rem;cursor:pointer;transition:background .25s,color .25s}
+.btn:hover{background:var(--ink);color:var(--paper)}
+.titleblock{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--ink);font-size:.85rem}
+.titleblock div{padding:.7rem .8rem;border-bottom:1px solid var(--line-2);border-right:1px solid var(--line-2);display:grid;gap:.15rem;min-width:0}
+.titleblock div:nth-child(2n){border-right:0}
+.titleblock div:nth-last-child(-n+2){border-bottom:0}
+.titleblock small{font:500 .6rem/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2)}
+.foot{margin-top:clamp(3rem,7vw,6rem);display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;color:var(--ink-2);border-top:1px solid var(--line-2);padding-top:1rem}
+@media (max-width:860px){.contact-grid{grid-template-columns:minmax(0,1fr)}.stamp{position:relative;right:auto;top:auto;margin-top:1.6rem}}
+
+@media (prefers-reduced-motion:reduce){.scrollcue i::after{animation:none}}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <pattern id="hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="7" stroke="currentColor" stroke-width="1" opacity=".55"/></pattern>
+</defs></svg>
+
+<header class="nav pad">
+  <a class="mark" href="#top" aria-label="Back to top"><span class="mark-box">YN</span><span>Your Name</span></a>
+  <nav aria-label="Primary"><a href="#sets">Drawing sets</a><a href="#process">Process</a><a href="#work">Work</a><a class="nav-cta" href="#contact">Contact</a></nav>
+</header>
+<div class="rail" aria-hidden="true"><div class="rail-fill" id="railFill"></div><div class="rail-mark" id="railMark"><span id="railPct">0</span></div></div>
+<div class="hud" aria-hidden="true"><span id="hudSheet">Sheet 01/07</span><span id="hudName">Cover</span><span id="hudScale">1:10</span></div>
+<div class="xhair" id="xhair" aria-hidden="true"><i class="xh-x"></i><i class="xh-y"></i><b id="xhRead">X 0000 Y 0000</b></div>
+
+<main>
+<!-- SHEET 01 : COVER -->
+<section class="hero sheet" id="top" data-sheet="Cover" data-scale="1:10">
+  <div class="hero-pin pad">
+    <div class="grid-bg" id="gridBg"></div>
+    <div class="hero-copy">
+      <p class="eyebrow">Joinery draftsman &middot; shop drawings &amp; details</p>
+      <h1 aria-label="Drawn before it's built."><span class="ln1"><span>Drawn</span></span><span class="ln1"><span>before</span></span><span class="ln1"><span>it&rsquo;s</span></span><span class="ln1"><span><em>built.</em></span></span></h1>
+      <div class="swap">
+        <p class="lede" id="lede">I turn architects&rsquo; intent and site measurements into drawings a workshop can cut from. Scroll to take a cabinet apart the way I draw it.</p>
+        <div class="legend" id="legend"><ul>
+          <li><b>A</b><span>8 mm housing for the fixed shelf</span></li>
+          <li><b>B</b><span>&Oslash;8 dowels at 32 mm centres, top to gable</span></li>
+          <li><b>C</b><span>6 mm back panel in a 5 mm rebate</span></li>
+        </ul></div>
+      </div>
+      <div class="scrollcue" id="cue"><i></i>Scroll to explode</div>
+    </div>
+    <div class="hero-stage"><svg id="cab" role="img" aria-label="Isometric drawing of a two-door cabinet that separates into its parts as you scroll"></svg><p class="stage-tag" id="stageTag"><span>&#9679;</span> <b id="stageName" style="font-weight:500">Assembled</b> &middot; 600 &times; 720 &times; 350</p></div>
+  </div>
+</section>
+
+<!-- SHEET 02 : BRIEF -->
+<section class="brief sheet pad" data-sheet="Brief" data-scale="NTS" aria-label="About">
+  <p class="eyebrow" style="margin-bottom:1.6rem">Brief</p>
+  <p id="brief" data-hl="dimension,joint,build,cut">I turn architects&rsquo; intent and site measurements into drawings a workshop can build from. Every dimension checked. Every joint resolved. Nothing left to guess at the saw.</p>
+  <dl class="brief-meta mono">
+    <div><dt>Discipline</dt><dd>Joinery &amp; architectural millwork</dd></div>
+    <div><dt>Output</dt><dd>Shop drawings, details, cutting lists</dd></div>
+    <div><dt>Standard</dt><dd>All dimensions in mm unless noted</dd></div>
+  </dl>
+</section>
+
+<!-- SHEET 03 : DRAWING SETS -->
+<section class="sets sheet" id="sets" data-sheet="Drawing sets" data-scale="1:20 &rarr; 1:2">
+  <div class="sets-pin">
+    <div class="pad"><div class="sheet-head"><div><p class="eyebrow">Sheet 03 &middot; what a set contains</p><h2>Four views.<br>One build.</h2></div><p class="mono" style="color:var(--ink-2)" id="setsHint">Keep scrolling &rarr;</p></div></div>
+    <div class="track" id="track">
+
+      <article class="panel"><div class="panel-art"><svg viewBox="0 0 640 400" role="img" aria-label="Plan of a four-door wardrobe run with door swings and a dimension chain">
+        <path class="ln d" d="M30 62H610M30 78H610"/>
+        <rect class="ln d" x="60" y="78" width="520" height="58"/>
+        <path class="ln thin d" d="M190 78V136M320 78V136M450 78V136"/>
+        <path class="ln hair d dash" d="M190 136A130 130 0 0 1 60 266M190 136A130 130 0 0 0 320 266M320 136A130 130 0 0 0 450 266M450 136A130 130 0 0 0 580 266"/>
+        <path class="ln thin d" d="M60 136V266M320 136V266M450 136V266M580 136V266"/>
+        <path class="ln hair d" d="M60 282V318M190 282V318M320 282V318M450 282V318M580 282V318"/>
+        <path class="ln d" d="M60 306H580"/>
+        <path class="ln d" d="M54 312L66 300M184 312L196 300M314 312L326 300M444 312L456 300M574 312L586 300"/>
+        <g class="t"><text class="txt" x="125" y="298" text-anchor="middle">650</text><text class="txt" x="255" y="298" text-anchor="middle">650</text><text class="txt" x="385" y="298" text-anchor="middle">650</text><text class="txt" x="515" y="298" text-anchor="middle">650</text><text class="txt ink" x="320" y="344" text-anchor="middle">2600 OVERALL</text><text class="txt" x="38" y="54">WALL</text><text class="txt rd" x="470" y="54">DOOR SWING &#8709;130</text></g>
+      </svg></div><div class="panel-body"><h3>Plan</h3><span class="scale">1:20</span><p>Setting out against the wall: door swings, clearances, services and the dimension chain the installer works from.</p></div></article>
+
+      <article class="panel"><div class="panel-art"><svg viewBox="0 0 640 400" role="img" aria-label="Front elevation of a wardrobe with four doors, three drawers and overall dimensions">
+        <rect class="ln d" x="80" y="40" width="480" height="300"/>
+        <path class="ln thin d" d="M200 40V260M320 40V260M440 40V260M80 260H560M240 260V340M400 260V340"/>
+        <path class="ln d" d="M190 120V180M210 120V180M430 120V180M450 120V180"/>
+        <path class="ln d" d="M130 300H190M280 300H360M450 300H510"/>
+        <path class="ln hair d dash" d="M200 40L80 150L200 260M200 40L320 150L200 260M440 40L320 150L440 260M440 40L560 150L440 260"/>
+        <path class="ln hair d" d="M600 40H616M600 340H616M608 40V340"/>
+        <path class="ln d" d="M602 46L614 34M602 346L614 334"/>
+        <path class="ln hair d" d="M80 358V374M560 358V374M80 366H560"/>
+        <path class="ln d" d="M74 372L86 360M554 372L566 360"/>
+        <g class="t"><text class="txt ink" x="628" y="195" transform="rotate(-90 628 195)" text-anchor="middle">2400</text><text class="txt ink" x="320" y="392" text-anchor="middle">2600</text><text class="txt rd" x="92" y="30">HANDLE 128 C/C</text></g>
+      </svg></div><div class="panel-body"><h3>Elevation</h3><span class="scale">1:10</span><p>Every door, drawer and shadow gap, with hinge sides marked in dashed lines and heights held to the finished floor.</p></div></article>
+
+      <article class="panel"><div class="panel-art"><svg viewBox="0 0 640 400" role="img" aria-label="Hatched cross-section through a base unit with worktop, carcass, shelf and plinth">
+        <path class="ln d" d="M50 350H590"/><path class="ln hair d" d="M60 350l-10 10M90 350l-10 10M120 350l-10 10M150 350l-10 10M180 350l-10 10M210 350l-10 10M240 350l-10 10M270 350l-10 10M300 350l-10 10M330 350l-10 10M360 350l-10 10M390 350l-10 10M420 350l-10 10M450 350l-10 10M480 350l-10 10M510 350l-10 10M540 350l-10 10M570 350l-10 10"/>
+        <rect class="ln d" x="100" y="80" width="440" height="22" fill="url(#hatch)" style="color:var(--ink)"/>
+        <rect class="ln d" x="140" y="102" width="16" height="198" fill="url(#hatch)" style="color:var(--ink)"/>
+        <rect class="ln d" x="140" y="300" width="360" height="16" fill="url(#hatch)" style="color:var(--ink)"/>
+        <rect class="ln d" x="500" y="102" width="8" height="214" fill="url(#hatch)" style="color:var(--ink)"/>
+        <rect class="ln d" x="156" y="206" width="344" height="14" fill="url(#hatch)" style="color:var(--ink)"/>
+        <rect class="ln d" x="118" y="110" width="18" height="190" fill="url(#hatch)" style="color:var(--ink)"/>
+        <rect class="ln d" x="170" y="316" width="16" height="34" fill="url(#hatch)" style="color:var(--ink)"/>
+        <path class="ln hair d" d="M590 80H606M590 350H606M598 80V350M100 58V42M540 58V42M100 50H540"/>
+        <path class="ln d" d="M592 86L604 74M592 356L604 344M94 56L106 44M534 56L546 44"/>
+        <path class="ln rd d" d="M30 160H70M30 240H70"/><path class="ln rd d" d="M30 160V150L24 160M30 240V250L24 240"/>
+        <g class="t"><text class="txt ink" x="620" y="220" transform="rotate(-90 620 220)" text-anchor="middle">900</text><text class="txt ink" x="320" y="38" text-anchor="middle">600</text><text class="txt rd" x="40" y="395">SECTION A&ndash;A</text><text class="txt" x="205" y="270">18 MR-MDF CARCASS</text><text class="txt" x="205" y="145">38 WORKTOP</text></g>
+      </svg></div><div class="panel-body"><h3>Section</h3><span class="scale">1:5</span><p>Cut through the build-up so the shop sees material thicknesses, fixings and what sits behind what.</p></div></article>
+
+      <article class="panel"><div class="panel-art"><svg viewBox="0 0 640 400" role="img" aria-label="Detail of a rebated back-panel joint in a gable">
+        <path class="ln d" d="M200 60H320V300H290V340H200Z" fill="url(#hatch)" style="color:var(--ink)"/>
+        <rect class="ln d" x="290" y="300" width="230" height="40" fill="url(#hatch)" style="color:var(--ink)"/>
+        <path class="ln hair d dash" d="M200 300H290"/>
+        <path class="ln hair d" d="M200 38V54M320 38V54M200 46H320M150 60H190M150 340H190M158 60V340"/>
+        <path class="ln d" d="M194 52L206 40M314 52L326 40M152 66L164 54M152 346L164 334"/>
+        <path class="ln rd d" d="M560 300V340M545 300H575M545 340H575"/>
+        <path class="ln rd d" d="M305 320L400 230H470"/><circle class="ln rd d" cx="305" cy="320" r="5"/>
+        <g class="t"><text class="txt ink" x="260" y="30" text-anchor="middle">18</text><text class="txt ink" x="120" y="205" transform="rotate(-90 120 205)" text-anchor="middle">GABLE</text><text class="txt rd" x="478" y="224">6 MM BACK</text><text class="txt rd" x="478" y="244">5 MM REBATE</text><text class="txt" x="360" y="190">GLUED + PINNED</text></g>
+      </svg></div><div class="panel-body"><h3>Detail</h3><span class="scale">1:2</span><p>The joint, enlarged. Rebates, grain direction and fixing centres resolved before anything reaches the CNC.</p></div></article>
+
+    </div>
+  </div>
+</section>
+
+<!-- SHEET 04 : PROCESS (layers) -->
+<section class="process sheet" id="process" data-sheet="Process" data-scale="1:20">
+  <div class="proc-pin pad" id="procPin">
+    <div class="layers">
+      <p class="eyebrow">Sheet 04 &middot; how a sheet gets built</p>
+      <h2>Layer by layer.</h2>
+      <div class="layer-box">
+        <p class="mono"><span>Layers</span><span id="layerCount">0 / 5 on</span></p>
+        <div class="layer" data-i="0"><i class="sw"></i><span class="nm">A-SURVEY</span><span class="st">OFF</span><p>Measured walls, services and datum levels. Out-of-square rooms are flagged before a panel is cut.</p></div>
+        <div class="layer" data-i="1"><i class="sw"></i><span class="nm">J-CARCASS</span><span class="st">OFF</span><p>Bays, doors and drawers set out on the grid from the architect&rsquo;s intent.</p></div>
+        <div class="layer" data-i="2"><i class="sw"></i><span class="nm">J-DIMS</span><span class="st">OFF</span><p>Overall and chain dimensions, tolerances and fixing positions, readable at the bench.</p></div>
+        <div class="layer" data-i="3"><i class="sw"></i><span class="nm">J-NOTES</span><span class="st">OFF</span><p>Material, finish and hardware callouts keyed to the schedule and the cutting list.</p></div>
+        <div class="layer rev" data-i="4"><i class="sw"></i><span class="nm">REV-C</span><span class="st">OFF</span><p>Clouded revisions and RFIs tracked, so the shop only ever works from the latest sheet.</p></div>
+      </div>
+    </div>
+    <div class="plan-wrap"><svg id="plan" viewBox="0 0 800 560" role="img" aria-label="Floor plan with joinery that gains layers as you scroll: walls, carcass, dimensions, notes and a red revision cloud"></svg></div>
+  </div>
+</section>
+
+<!-- SHEET 05 : WORK -->
+<section class="work sheet pad" id="work" data-sheet="Selected work" data-scale="1:50">
+  <div class="sheet-head"><div><p class="eyebrow">Sheet 05 &middot; selected drawing packages</p><h2>Selected<br>work</h2></div><p class="mono" style="color:var(--ink-2)">5 packages &middot; hover a row</p></div>
+  <div class="rows" id="rows">
+    <article class="row" data-cols="5" data-rows="3" data-kind="wardrobe"><div><h3>Penthouse walk-in wardrobe</h3></div><div class="tags"><b>Residential</b><span class="mono">38 sheets &middot; 1:20 to 1:1</span><span>Oak veneer, bronze mirror, integrated lighting</span></div><div class="thumb"><svg viewBox="0 0 400 200" aria-hidden="true"></svg></div></article>
+    <article class="row" data-cols="4" data-rows="1" data-kind="desk"><div><h3>Boutique hotel reception</h3></div><div class="tags"><b>Hospitality</b><span class="mono">24 sheets &middot; 1:20 to 1:2</span><span>Curved desk, fluted panelling, brass inlay</span></div><div class="thumb"><svg viewBox="0 0 400 200" aria-hidden="true"></svg></div></article>
+    <article class="row" data-cols="6" data-rows="4" data-kind="shelf"><div><h3>Flagship retail fixtures</h3></div><div class="tags"><b>Commercial</b><span class="mono">52 sheets &middot; 1:10 to 1:1</span><span>Modular display walls, CNC-cut, site-assembled</span></div><div class="thumb"><svg viewBox="0 0 400 200" aria-hidden="true"></svg></div></article>
+    <article class="row" data-cols="3" data-rows="2" data-kind="stair"><div><h3>Private library &amp; staircase</h3></div><div class="tags"><b>Residential</b><span class="mono">31 sheets &middot; 1:20 to 1:2</span><span>Floor-to-ceiling shelving, ladder rail, balustrade</span></div><div class="thumb"><svg viewBox="0 0 400 200" aria-hidden="true"></svg></div></article>
+    <article class="row" data-cols="4" data-rows="2" data-kind="bar"><div><h3>Restaurant banquette &amp; bar</h3></div><div class="tags"><b>Hospitality</b><span class="mono">19 sheets &middot; 1:10 to 1:2</span><span>Upholstered seating, timber bar front, back-bar</span></div><div class="thumb"><svg viewBox="0 0 400 200" aria-hidden="true"></svg></div></article>
+  </div>
+</section>
+
+<!-- SHEET 06 : CAPABILITY -->
+<section class="cap sheet" data-sheet="Capability" data-scale="NTS">
+  <div class="marq" id="marq1" aria-hidden="true"><span>AutoCAD</span><span>Cabinet Vision</span><span>SketchUp</span><span>Revit</span><span>AutoCAD</span><span>Cabinet Vision</span><span>SketchUp</span><span>Revit</span></div>
+  <div class="marq alt" id="marq2" aria-hidden="true"><span>Shop drawings</span><span>Cutting lists</span><span>CNC / DXF</span><span>Hardware schedules</span><span>Shop drawings</span><span>Cutting lists</span><span>CNC / DXF</span><span>Hardware schedules</span></div>
+  <div class="pad"><p class="sr" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Software and outputs: AutoCAD, Cabinet Vision, SketchUp, Revit. Shop drawings, cutting lists, CNC and DXF output, hardware schedules.</p>
+  <div class="stats" id="stats">
+    <div class="stat"><strong><span data-n="120">120</span>+</strong><span>Projects drawn from survey to issue</span></div>
+    <div class="stat"><strong><span data-n="2400">2,400</span></strong><span>Sheets issued to the workshop</span></div>
+    <div class="stat"><strong>&plusmn;<span data-n="0.5" data-d="1">0.5</span></strong><span>mm tolerance held on every dimension</span></div>
+    <div class="stat"><strong><span data-n="8">8</span> yrs</strong><span>Turning intent into cut-ready drawings</span></div>
+  </div></div>
+</section>
+
+<!-- SHEET 07 : CONTACT -->
+<section class="contact sheet pad" id="contact" data-sheet="Contact" data-scale="1:1">
+  <p class="eyebrow" style="margin-bottom:1.4rem">Sheet 07 &middot; issue</p>
+  <h2 id="cth">Let&rsquo;s <span class="red">draw</span> it up.</h2>
+  <div class="stamp" id="stamp" aria-hidden="true"><div>Issued for construction<small>REV A &middot; ALL DIMS IN MM</small></div></div>
+  <div class="contact-grid">
+    <div>
+      <p class="lede" style="margin-bottom:1.4rem">Freelance and contract drafting for joinery workshops, contractors and architects. Send the brief and the architect&rsquo;s drawings and I&rsquo;ll reply with a scope and a turnaround.</p>
+      <div class="mail"><code id="mailTxt">hello@yourname.com</code><button class="btn" id="copyBtn" type="button">Copy address</button></div>
+    </div>
+    <div class="titleblock mono">
+      <div><small>Drawn by</small>Your Name</div><div><small>Discipline</small>Joinery drafting</div>
+      <div><small>Availability</small>Freelance &amp; contract</div><div><small>Based in</small>Your city</div>
+      <div><small>Scale</small>1:1</div><div><small>Revision</small>A</div>
+    </div>
+  </div>
+  <div class="foot mono"><span>&copy; 2026 Your Name</span><span>Do not scale from this drawing</span></div>
+</section>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script>
+(function(){
+'use strict';
+const NS='http://www.w3.org/2000/svg';
+const el=(n,a,p)=>{const e=document.createElementNS(NS,n);for(const k in (a||{}))e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e;};
+const fmt=n=>n.toFixed(1);
+
+/* ---------- isometric engine (units are mm) ---------- */
+const C30=0.8660254,S30=0.5;
+const P=(x,y,z)=>[(x-z)*C30,(x+z)*S30-y];
+const poly=a=>'M'+a.map(p=>P(p[0],p[1],p[2]).map(fmt).join(' ')).join('L')+'Z';
+const seg=(a,b)=>'M'+P(a[0],a[1],a[2]).map(fmt).join(' ')+'L'+P(b[0],b[1],b[2]).map(fmt).join(' ');
+function box(g,b,cls){
+  const x0=b[0],y0=b[1],z0=b[2],x1=b[3],y1=b[4],z1=b[5],c=cls||['f-top','f-front','f-right'];
+  el('path',{class:c[0]+' ln d',d:poly([[x0,y1,z0],[x1,y1,z0],[x1,y1,z1],[x0,y1,z1]])},g);
+  el('path',{class:c[1]+' ln d',d:poly([[x0,y0,z1],[x1,y0,z1],[x1,y1,z1],[x0,y1,z1]])},g);
+  el('path',{class:c[2]+' ln d',d:poly([[x1,y0,z0],[x1,y0,z1],[x1,y1,z1],[x1,y1,z0]])},g);
+}
+const seeded=(()=>{let s=7;return()=>{s=(s*16807)%2147483647;return s/2147483647;};})();
+function grain(g,x0,x1,y0,y1,z){
+  const n=Math.max(4,Math.round((x1-x0)/26));
+  for(let i=1;i<n;i++){
+    const x=x0+(x1-x0)*i/n+(seeded()-.5)*8, a=y0+14+seeded()*60, b=y1-14-seeded()*80;
+    el('path',{class:'grain d',d:seg([x,a,z],[x+(seeded()-.5)*6,b,z])},g);
+  }
+}
+const W=600,H=720,D=350,T=18,FZ=D+18;
+const WOOD=['w-top','w-front','w-right'], INK=['fill-ink ln d','fill-ink ln d','fill-ink ln d'];
+const parts=[
+  {id:'back',  boxes:[[T,T,0,W-T,H-T,8]],      ex:[0,0,-250]},
+  {id:'left',  boxes:[[0,0,0,T,H,D]],          ex:[-250,0,0]},
+  {id:'bottom',boxes:[[T,0,8,W-T,T,D]],        ex:[0,-210,0]},
+  {id:'shelf', boxes:[[T,400,8,W-T,418,D-24]], ex:[0,40,0]},
+  {id:'top',   boxes:[[T,H-T,8,W-T,H,D]],      ex:[0,290,0]},
+  {id:'right', boxes:[[W-T,0,0,W,H,D]],        ex:[250,0,0]},
+  {id:'doorL', boxes:[[0,0,D,W/2-1,H,FZ],[W/2-34,330,FZ,W/2-26,470,FZ+16]], ex:[-130,0,300], wood:true},
+  {id:'doorR', boxes:[[W/2+1,0,D,W,H,FZ],[W/2+26,330,FZ,W/2+34,470,FZ+16]], ex:[130,0,300], wood:true}
+];
+
+window.__buildCabinet=function(svg){
+  const root=el('g',{},svg), pg={};
+  parts.forEach(p=>{
+    const g=el('g',{class:'part','data-id':p.id},root); pg[p.id]=g; p.g=g;
+    p.boxes.forEach((b,i)=>{ if(i===1) box(g,b,INK); else box(g,b,p.wood?WOOD:null); });
+    if(p.wood){const b=p.boxes[0];grain(g,b[0]+8,b[3]-8,b[1],b[4],b[5]);}
+  });
+  const dimsG=el('g',{class:'dims'},root);
+  const DZ=FZ+120, DX=W+120;
+  const dim=(a,b,label,rot,off,extPath)=>{
+    el('path',{class:'ln hair d',d:extPath},dimsG);
+    const pa=P(a[0],a[1],a[2]),pb=P(b[0],b[1],b[2]);
+    el('path',{class:'ln d',d:'M'+fmt(pa[0])+' '+fmt(pa[1])+'L'+fmt(pb[0])+' '+fmt(pb[1])},dimsG);
+    [pa,pb].forEach(q=>el('path',{class:'ln d',d:'M'+fmt(q[0]-13)+' '+fmt(q[1]+13)+'L'+fmt(q[0]+13)+' '+fmt(q[1]-13)},dimsG));
+    const mx=(pa[0]+pb[0])/2+off[0],my=(pa[1]+pb[1])/2+off[1];
+    const t=el('text',{class:'txt ink t',x:fmt(mx),y:fmt(my),'text-anchor':'middle','font-size':'30',transform:'rotate('+rot+' '+fmt(mx)+' '+fmt(my)+')'},dimsG);
+    t.textContent=label;
+  };
+  dim([0,0,DZ],[W,0,DZ],'600',30,[0,38],seg([0,0,FZ+8],[0,0,DZ+16])+seg([W,0,FZ+8],[W,0,DZ+16]));
+  dim([DX,0,0],[DX,0,FZ],'350',-30,[0,38],seg([W+8,0,0],[DX+16,0,0])+seg([W+8,0,FZ],[DX+16,0,FZ]));
+  dim([DX,0,FZ],[DX,H,FZ],'720',-90,[34,0],seg([W+8,H,FZ],[DX+16,H,FZ]));
+
+  /* callouts live inside the part they describe, so they travel with it */
+  const call=(partId,pt,off,letter)=>{
+    const g=el('g',{class:'call'},pg[partId]),q=P(pt[0],pt[1],pt[2]);
+    el('circle',{cx:fmt(q[0]),cy:fmt(q[1]),r:7,style:'fill:var(--red)'},g);
+    el('path',{class:'ln rd d',d:'M'+fmt(q[0])+' '+fmt(q[1])+'L'+fmt(q[0]+off[0])+' '+fmt(q[1]+off[1])},g);
+    el('circle',{class:'ln rd d',cx:fmt(q[0]+off[0]),cy:fmt(q[1]+off[1]),r:25,style:'fill:var(--paper)'},g);
+    const t=el('text',{class:'txt rd',x:fmt(q[0]+off[0]),y:fmt(q[1]+off[1]+9),'text-anchor':'middle','font-size':'25'},g);t.textContent=letter;
+  };
+  call('shelf',[T,409,120],[-100,-70],'A');
+  call('top',[T+40,H,60],[-90,-90],'B');
+  call('back',[W/2+60,H*0.55,8],[120,-80],'C');
+  return {root:root,pg:pg,parts:parts,dims:dimsG,P:P};
+};
+})();
+(function(){
+'use strict';
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const NS='http://www.w3.org/2000/svg';
+const el=(n,a,p)=>{const e=document.createElementNS(NS,n);for(const k in (a||{}))e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e;};
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const canAnim=!!(window.gsap&&window.ScrollTrigger)&&!reduce;
+const fmt=n=>n.toFixed(1);
+
+/* ---------- draw-on helpers ---------- */
+function prep(root){
+  const items=$$('.d',root);
+  items.forEach(e=>{
+    let L=100; try{L=e.getTotalLength()||100;}catch(_){}
+    e.style.strokeDasharray=L; e.style.strokeDashoffset=L;
+    if(e.classList.contains('dash')){e.style.opacity=0;}
+    if(getComputedStyle(e).fill!=='none'){e.style.fillOpacity=0;}
+  });
+  $$('.t',root).forEach(t=>t.style.opacity=0);
+  return items;
+}
+function drawIn(root,vars){
+  const lines=$$('.d',root).filter(e=>!(vars&&vars.skipCalls&&e.closest('.call'))), txt=$$('.t',root);
+  const tl=gsap.timeline(vars&&vars.tl||{});
+  tl.to(lines,{strokeDashoffset:0,opacity:1,duration:(vars&&vars.duration)||1.2,ease:(vars&&vars.ease)||'power2.inOut',stagger:(vars&&vars.stagger)||{amount:.6}},0);
+  tl.to(lines,{fillOpacity:1,duration:.5,stagger:{amount:.6}},.4);
+  tl.to(txt,{opacity:1,duration:.5,stagger:.05},.7);
+  tl.add(()=>lines.forEach(e=>{if(e.classList.contains('dash')){e.style.strokeDasharray='';e.style.strokeDashoffset='';}}));
+  return tl;
+}
+function plain(root){ $$('.t',root).forEach(t=>t.style.opacity=1); }
+
+/* ---------- hero cabinet ---------- */
+const svg=$('#cab'); svg.setAttribute('class','iso');
+const cab=window.__buildCabinet(svg);
+const exOff=(p,t)=>{const e=p.ex;return[(e[0]-e[2])*0.8660254*t,((e[0]+e[2])*0.5-e[1])*t];};
+function setT(t){cab.parts.forEach(p=>{const o=exOff(p,t);p.g.setAttribute('transform','translate('+fmt(o[0])+' '+fmt(o[1])+')');});}
+const calls=$$('.call',svg);
+setT(0);
+calls.forEach(c=>c.style.display='none'); const b0=cab.root.getBBox(); calls.forEach(c=>c.style.display='');
+cab.dims.style.display='none'; setT(1); const b1=cab.root.getBBox(); cab.dims.style.display=''; setT(0);
+const pad=70, A=[b0.x-pad,b0.y-pad,b0.width+pad*2,b0.height+pad*2], B=[b1.x-pad,b1.y-pad,b1.width+pad*2,b1.height+pad*2];
+const lerp=(a,b,t)=>a+(b-a)*t;
+function setView(t){svg.setAttribute('viewBox',A.map((v,i)=>fmt(lerp(v,B[i],t))).join(' '));}
+setView(0);
+window.__hero={setT:setT,setView:setView,cab:cab,calls:calls};
+
+/* ---------- floor plan (layers) ---------- */
+const plan=$('#plan');
+const lay=[];
+function g(cls){const e=el('g',{class:cls},plan);lay.push(e);return e;}
+const L0=g('lay');
+el('path',{class:'ln d',style:'stroke-width:3.4',d:'M40 40H760V520H690M600 520H40Z'},L0);
+el('path',{class:'ln thin d',d:'M56 56H744V504H690M600 504H56Z'},L0);
+el('path',{class:'ln d',d:'M300 40V56M500 40V56M300 48H500M300 44H500M300 52H500'},L0);
+el('path',{class:'ln thin d',d:'M600 504V414'},L0);
+el('path',{class:'ln hair d dash',d:'M690 504A90 90 0 0 0 600 414'},L0);
+[[40,40],[760,40],[760,520],[40,520]].forEach(c=>el('path',{class:'ln rd d',d:'M'+(c[0]-9)+' '+c[1]+'H'+(c[0]+9)+'M'+c[0]+' '+(c[1]-9)+'V'+(c[1]+9)},L0));
+[['SITE MEASURED',60,32],['WINDOW 2000',300,32],['DOOR 900',606,544]].forEach(a=>{const t=el('text',{class:'txt t',x:a[1],y:a[2]},L0);t.textContent=a[0];});
+const L1=g('lay');
+el('rect',{class:'ln d',x:56,y:120,width:60,height:320},L1);
+el('path',{class:'ln thin d',d:'M56 200H116M56 280H116M56 360H116'},L1);
+el('path',{class:'ln hair d dash',d:'M116 120L56 160L116 200M116 200L56 240L116 280M116 280L56 320L116 360M116 360L56 400L116 440'},L1);
+el('rect',{class:'ln d',x:300,y:250,width:260,height:90},L1);
+el('rect',{class:'ln thin d',x:310,y:260,width:240,height:70},L1);
+el('rect',{class:'ln thin d',x:390,y:276,width:70,height:38},L1);
+el('circle',{class:'ln thin d',cx:425,cy:295,r:7},L1);
+[330,350,370,490,510,530].forEach(x=>el('circle',{class:'ln hair d',cx:x,cy:360,r:9},L1));
+const L2=g('lay');
+el('path',{class:'ln hair d',d:'M116 120H190M116 200H166M116 280H166M116 360H166M116 440H190'},L2);
+el('path',{class:'ln d',d:'M150 120V440M178 120V440'},L2);
+[120,200,280,360,440].forEach(y=>el('path',{class:'ln d',d:'M144 '+(y+6)+'L156 '+(y-6)},L2));
+[120,440].forEach(y=>el('path',{class:'ln d',d:'M172 '+(y+6)+'L184 '+(y-6)},L2));
+[160,240,320,400].forEach(y=>{const t=el('text',{class:'txt t',x:143,y:y+4,'text-anchor':'middle',transform:'rotate(-90 143 '+(y+4)+')'},L2);t.textContent='800';});
+{const t=el('text',{class:'txt ink t',x:197,y:284,'text-anchor':'middle',transform:'rotate(-90 197 284)'},L2);t.textContent='3200';}
+el('path',{class:'ln hair d',d:'M300 345V400M560 345V400M560 250H610M560 340H610'},L2);
+el('path',{class:'ln d',d:'M300 392H560M598 250V340'},L2);
+el('path',{class:'ln d',d:'M294 398L306 386M554 398L566 386M592 346L604 334M592 256L604 244'},L2);
+{const a=el('text',{class:'txt ink t',x:430,y:386,'text-anchor':'middle'},L2);a.textContent='2600';const b=el('text',{class:'txt ink t',x:621,y:298,'text-anchor':'middle',transform:'rotate(-90 621 298)'},L2);b.textContent='900';}
+const L3=g('lay');
+[['M86 150L214 100','U1  FULL-HEIGHT WARDROBE, OAK VENEER',220,104],['M425 250L470 196H660','K1  ISLAND, 38 STONE TOP',476,186],['M86 400L200 470H300','H4  SOFT-CLOSE HINGES x16',306,474]].forEach(n=>{
+  el('path',{class:'ln thin d',d:n[0]},L3);const t=el('text',{class:'txt t',x:n[2],y:n[3]},L3);t.textContent=n[1];});
+const L4=g('lay rev');
+(function(){const x0=432,y0=222,x1=612,y1=372,r=10;let d='M'+x0+' '+y0;
+  for(let x=x0;x<x1;x+=r*2)d+='A'+r+' '+r+' 0 0 1 '+Math.min(x+r*2,x1)+' '+y0;
+  for(let y=y0;y<y1;y+=r*2)d+='A'+r+' '+r+' 0 0 1 '+x1+' '+Math.min(y+r*2,y1);
+  for(let x=x1;x>x0;x-=r*2)d+='A'+r+' '+r+' 0 0 1 '+Math.max(x-r*2,x0)+' '+y1;
+  for(let y=y1;y>y0;y-=r*2)d+='A'+r+' '+r+' 0 0 1 '+x0+' '+Math.max(y-r*2,y0);
+  el('path',{class:'ln rd d',d:d+'Z'},L4);})();
+el('path',{class:'ln rd d',d:'M612 222L636 192L660 222Z'},L4);
+{const a=el('text',{class:'txt rd t',x:636,y:216,'text-anchor':'middle'},L4);a.textContent='C';
+ const b=el('text',{class:'txt rd t',x:560,y:414},L4);b.textContent='REV C  ISLAND DEPTH +100';}
+window.__plan={layers:lay};
+
+/* ---------- procedural thumbnails ---------- */
+function thumb(row){
+  const s=$('svg',row),cols=+row.dataset.cols,rows=+row.dataset.rows,k=row.dataset.kind;
+  const add=(t,a)=>el(t,Object.assign({class:'ln d'},a),s), X0=30,X1=370,Y0=26,Y1=166,w=X1-X0,h=Y1-Y0;
+  if(k==='wardrobe'||k==='shelf'){
+    add('rect',{x:X0,y:Y0,width:w,height:h});
+    for(let c=1;c<cols;c++)add('path',{class:'ln thin d',d:'M'+(X0+w*c/cols)+' '+Y0+'V'+Y1});
+    for(let r=1;r<rows;r++)add('path',{class:'ln thin d',d:'M'+X0+' '+(Y0+h*r/rows)+'H'+X1});
+    for(let c=0;c<cols;c++)for(let r=0;r<rows;r++){const cx=X0+w*(c+.5)/cols,cy=Y0+h*(r+.5)/rows;
+      if(k==='wardrobe')add('path',{class:'ln d',d:'M'+(cx+(c%2?-1:1)*w/cols*.32)+' '+(cy-8)+'V'+(cy+8)});
+      else if((c+r)%3===0)add('rect',{class:'ln hair d',x:cx-w/cols*.3,y:cy-h/rows*.28,width:w/cols*.6,height:h/rows*.56,fill:'url(#hatch)',style:'color:var(--ink)'});}
+  }else if(k==='desk'){
+    add('path',{d:'M'+X0+' '+(Y0+30)+'H'+X1+'M'+(X0+8)+' '+(Y0+44)+'H'+(X1-8)+'M'+X0+' '+(Y0+30)+'V'+Y1+'M'+X1+' '+(Y0+30)+'V'+Y1+'M'+X0+' '+Y1+'H'+X1});
+    for(let i=1;i<cols*5;i++){const x=X0+w*i/(cols*5);add('path',{class:'ln thin d',d:'M'+x+' '+(Y0+44)+'V'+Y1});}
+    add('path',{class:'ln rd d',d:'M'+(X0+w*.2)+' '+(Y0+8)+'H'+(X1-w*.2)});
+  }else if(k==='stair'){
+    let d='M'+X0+' '+Y1;const n=8;for(let i=0;i<n;i++){const x=X0+w*i/n,y=Y1-h*i/n*.8;d+='V'+(y-h*.8/n)+'H'+(x+w/n);}
+    add('path',{d:d+'V'+Y1+'Z'});
+    for(let i=1;i<n;i++){const x=X0+w*i/n+w/n*.5,y=Y1-h*i/n*.8-h*.8/n;add('path',{class:'ln thin d',d:'M'+x+' '+y+'V'+(y-34)});}
+    add('path',{class:'ln rd d',d:'M'+(X0+w/n*.5)+' '+(Y1-h*.8/n-34)+'L'+(X1-w/n*.5)+' '+(Y1-h*.8-34)});
+  }else{
+    add('rect',{x:X0,y:Y0+46,width:w,height:h-46});
+    for(let i=1;i<10;i++)add('path',{class:'ln thin d',d:'M'+X0+' '+(Y0+46+(h-46)*i/10)+'H'+X1});
+    add('path',{d:'M'+(X0-8)+' '+(Y0+46)+'H'+(X1+8)});
+    for(let c=0;c<cols;c++)add('rect',{class:'ln hair d',x:X0+10+c*(w-20)/cols,y:Y0,width:(w-20)/cols-10,height:30,fill:'url(#hatch)',style:'color:var(--ink)'});
+  }
+  const t=el('text',{class:'txt t',x:X0,y:190},s);t.textContent=(k.toUpperCase())+'  ELEVATION';
+}
+const rows=$$('.row');
+rows.forEach(thumb);
+window.__rows=rows;
+
+/* ---------- wiring ---------- */
+const sheets=$$('[data-sheet]');
+const layerEls=$$('.layer'), layerCnt=$('#layerCount');
+function setHud(i){const s=sheets[i];$('#hudSheet').textContent='Sheet 0'+(i+1)+'/0'+sheets.length;$('#hudName').textContent=s.dataset.sheet;$('#hudScale').textContent=s.dataset.scale;}
+
+function staticMode(){
+  setT(1);setView(1);cab.dims.style.display='none';calls.forEach(c=>c.style.opacity=1);
+  $('#lede').style.display='none';$('#legend').style.opacity=1;$('#cue').style.display='none';$('#stageName').textContent='Annotated';
+  layerEls.forEach(l=>{l.classList.add('on');$('.st',l).textContent='ON';});layerCnt.textContent='5 / 5 on';
+  $$('[data-n]').forEach(s=>{const n=+s.dataset.n,d=+(s.dataset.d||0);s.textContent=d?n.toFixed(d):n.toLocaleString('en-US');});
+  $$('.brief .w').forEach(w=>w.style.opacity=1);
+}
+
+/* crosshair (mouse only) */
+(function(){
+  const xh=$('#xhair'),xx=$('.xh-x'),xy=$('.xh-y'),rd=$('#xhRead');let raf=0,mx=0,my=0;
+  window.addEventListener('pointermove',e=>{
+    if(e.pointerType!=='mouse')return;mx=e.clientX;my=e.clientY;xh.classList.add('on');
+    if(!raf)raf=requestAnimationFrame(()=>{raf=0;xx.style.transform='translateY('+my+'px)';xy.style.transform='translateX('+mx+'px)';
+      rd.style.transform='translate('+(mx+10)+'px,'+(my+10)+'px)';
+      rd.textContent='X '+String(Math.round(mx*10)).padStart(5,'0')+'  Y '+String(Math.round(my*10)).padStart(5,'0');});
+  },{passive:true});
+  document.addEventListener('pointerleave',()=>xh.classList.remove('on'));
+})();
+
+/* copy address */
+$('#copyBtn').addEventListener('click',async()=>{
+  const b=$('#copyBtn'),t=$('#mailTxt');
+  try{await navigator.clipboard.writeText(t.textContent);b.textContent='Copied';}
+  catch(_){const r=document.createRange();r.selectNodeContents(t);const s=getSelection();s.removeAllRanges();s.addRange(r);b.textContent='Select + copy';}
+  setTimeout(()=>{b.textContent='Copy address';},2200);
+});
+
+if(!canAnim){
+  staticMode();
+  $$('a[href^="#"]').forEach(a=>a.addEventListener('click',e=>{const t=$(a.getAttribute('href'));if(t){e.preventDefault();t.scrollIntoView({behavior:reduce?'auto':'smooth'});}}));
+  setHud(0);
+  return;
+}
+
+gsap.registerPlugin(ScrollTrigger);
+ScrollTrigger.config({ignoreMobileResize:true});
+const mm=gsap.matchMedia();
+
+/* initial hidden states for drawings */
+prep(svg); prep(plan); $$('.panel-art svg').forEach(prep); rows.forEach(r=>prep($('svg',r)));
+gsap.set(calls,{opacity:0});
+
+/* hero intro */
+gsap.timeline({delay:.1})
+  .from('.hero h1 .ln1>span',{yPercent:115,duration:.95,stagger:.1,ease:'power4.out'},0)
+  .from('.hero .eyebrow,#cue',{y:14,opacity:0,duration:.6,stagger:.1},.3)
+  .add(drawIn(svg,{duration:1.7,stagger:{amount:1.5},skipCalls:true}),.2);
+
+/* hero scrub: assemble -> explode -> annotate */
+const proxy={t:0},apply=()=>{setT(proxy.t);setView(proxy.t);};
+const htl=gsap.timeline({defaults:{ease:'none'},scrollTrigger:{trigger:'.hero-pin',start:'top top',end:'+=270%',pin:true,scrub:.7,anticipatePin:1,
+  onUpdate:s=>{const p=s.progress;$('#stageName').textContent=p<.1?'Assembled':p<.7?'Exploded':'Annotated';}}});
+htl.to('#cue',{opacity:0,duration:.4},0)
+  .to('.dims',{opacity:0,duration:1.2},1)
+  .to(proxy,{t:1,duration:5,ease:'power2.inOut',onUpdate:apply},1)
+  .fromTo('#lede',{opacity:1,y:0},{opacity:0,y:-14,duration:1},1.5)
+  .fromTo('#legend',{opacity:0,y:14},{opacity:1,y:0,duration:1},5.2)
+  .to(calls,{opacity:1,duration:.4,stagger:.55},5.6);
+calls.forEach((c,i)=>htl.to($$('.d',c),{strokeDashoffset:0,fillOpacity:1,duration:.9,stagger:.1},5.6+i*.55));
+htl.to({},{duration:1.6},7.6);
+gsap.to('#gridBg',{backgroundPosition:'0px -420px, 0px 0px, 0px -420px, 0px 0px',ease:'none',scrollTrigger:{trigger:'.hero',start:'top top',end:'+=270%',scrub:true}});
+
+/* brief: words ink in with scroll */
+(function(){
+  const bp=$('#brief'),hl=(bp.dataset.hl||'').split(','),src=bp.textContent.trim();
+  bp.textContent='';bp.setAttribute('aria-label',src);
+  src.split(/\s+/).forEach(w=>{const s=document.createElement('span');const k=w.toLowerCase().replace(/[^a-z]/g,'');
+    s.className='w'+(hl.some(h=>h&&k.indexOf(h)===0)?' mk':'');s.textContent=w+' ';s.setAttribute('aria-hidden','true');bp.appendChild(s);});
+  const words=$$('.w',bp);gsap.set(words,{opacity:.16});
+  gsap.to(words,{opacity:1,stagger:.12,duration:.5,ease:'none',scrollTrigger:{trigger:bp,start:'top 80%',end:'bottom 50%',scrub:true}});
+})();
+
+/* drawing sets: horizontal pin on desktop, stacked reveal on phones */
+mm.add('(min-width:861px)',()=>{
+  const track=$('#track'),dist=()=>Math.max(0,track.scrollWidth-document.documentElement.clientWidth);
+  const tw=gsap.to(track,{x:()=>-dist(),ease:'none',scrollTrigger:{trigger:'.sets',start:'top top',end:()=>'+='+dist(),pin:true,scrub:.8,anticipatePin:1,invalidateOnRefresh:true,
+    onUpdate:s=>{$('#setsHint').style.opacity=s.progress>.04?0:1;}}});
+  $$('.panel').forEach(p=>{
+    const t=drawIn($('svg',p),{duration:1.4,tl:{paused:true}});
+    ScrollTrigger.create({trigger:p,containerAnimation:tw,start:'left 88%',once:true,onEnter:()=>t.play()});
+  });
+});
+mm.add('(max-width:860px)',()=>{
+  $$('.panel').forEach(p=>{const t=drawIn($('svg',p),{duration:1.2,tl:{paused:true}});
+    ScrollTrigger.create({trigger:p,start:'top 82%',once:true,onEnter:()=>t.play()});});
+});
+
+/* process: layers switch on as you scroll */
+const ltl=window.__plan.layers.map(g=>drawIn(g,{duration:1.1,tl:{paused:true}}));
+let cur=0;
+function setLayers(n){
+  if(n===cur)return;
+  for(let i=0;i<5;i++){const on=i<n;layerEls[i].classList.toggle('on',on);$('.st',layerEls[i]).textContent=on?'ON':'OFF';
+    if(on&&i>=cur)ltl[i].play(); if(!on&&i<cur)ltl[i].reverse();}
+  cur=n;layerCnt.textContent=n+' / 5 on';
+}
+ScrollTrigger.create({trigger:'#procPin',start:'top top',end:'+=320%',pin:true,anticipatePin:1,
+  onUpdate:s=>{const p=s.progress;setLayers(p<.03?0:Math.min(5,1+Math.floor((p-.03)/.19)));}});
+
+/* work rows */
+rows.forEach(r=>{
+  const t=drawIn($('svg',r),{duration:1.2,tl:{paused:true}});
+  gsap.from($('h3',r),{x:-80,opacity:0,duration:.9,ease:'power3.out',scrollTrigger:{trigger:r,start:'top 90%',once:true}});
+  ScrollTrigger.create({trigger:r,start:'top 90%',once:true,onEnter:()=>t.play()});
+  ScrollTrigger.create({trigger:r,start:'top 58%',end:'bottom 42%',toggleClass:{targets:r,className:'act'}});
+});
+
+/* marquees react to scroll speed */
+(function(){
+  const m1=$('#marq1'),m2=$('#marq2');let o1=0,o2=0,last=window.scrollY,vel=0;
+  gsap.ticker.add(()=>{
+    const y=window.scrollY;vel+=((y-last)-vel)*.12;last=y;
+    const sp=.8+Math.min(Math.abs(vel),60)*.4,h1=m1.scrollWidth/2,h2=m2.scrollWidth/2;
+    o1-=sp;o2+=sp;o1=-((((-o1)%h1)+h1)%h1);o2=(((o2%h2)+h2)%h2)-h2;
+    const sk=Math.max(-8,Math.min(8,-vel*.12));
+    m1.style.transform='translate3d('+o1.toFixed(1)+'px,0,0) skewX('+sk.toFixed(2)+'deg)';
+    m2.style.transform='translate3d('+o2.toFixed(1)+'px,0,0) skewX('+sk.toFixed(2)+'deg)';
+  });
+})();
+
+/* counters */
+$$('[data-n]').forEach(s=>{const n=+s.dataset.n,d=+(s.dataset.d||0),o={v:0};
+  ScrollTrigger.create({trigger:'#stats',start:'top 88%',once:true,onEnter:()=>gsap.to(o,{v:n,duration:1.9,ease:'power2.out',
+    onUpdate:()=>{s.textContent=d?o.v.toFixed(d):Math.round(o.v).toLocaleString('en-US');}})});});
+
+/* contact: the stamp lands */
+gsap.set('#stamp',{opacity:0});
+gsap.from('#cth',{yPercent:25,opacity:0,duration:1,ease:'power3.out',scrollTrigger:{trigger:'#contact',start:'top 80%',once:true}});
+ScrollTrigger.create({trigger:'#contact',start:'top 50%',once:true,onEnter:()=>{
+  gsap.timeline().fromTo('#stamp',{scale:2.6,opacity:0,rotate:-26},{scale:1,opacity:1,rotate:-9,duration:.4,ease:'power4.in'})
+    .to('#stamp',{scale:1.05,duration:.09,yoyo:true,repeat:1,ease:'power1.out'});}});
+
+/* HUD + ruler rail (created after the pins so pinned sheets use their spacers) */
+sheets.forEach((s,i)=>{const tr=s.closest('.pin-spacer')||s;
+  ScrollTrigger.create({trigger:tr,start:'top 55%',end:'bottom 55%',onToggle:self=>{if(self.isActive)setHud(i);}});});
+setHud(0);
+const fill=$('#railFill'),mark=$('#railMark'),pct=$('#railPct');
+ScrollTrigger.create({start:0,end:'max',onUpdate:s=>{const p=s.progress;fill.style.height=(p*100)+'%';mark.style.top=(p*100)+'%';pct.textContent=Math.round(p*100);}});
+
+/* nav: smooth jump that understands pinned sections */
+$$('a[href^="#"]').forEach(a=>a.addEventListener('click',e=>{
+  const id=a.getAttribute('href'),t=$(id);if(!t)return;e.preventDefault();
+  let y=id==='#top'?0:t.getBoundingClientRect().top+window.scrollY;
+  const st=ScrollTrigger.getAll().find(s=>s.pin&&t.contains(s.trigger));if(st&&id!=='#top')y=st.start;
+  window.scrollTo({top:y,behavior:'smooth'});
+}));
+
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>ScrollTrigger.refresh());
+window.addEventListener('load',()=>ScrollTrigger.refresh());
+})();
+</script>
+
+</body></html>
